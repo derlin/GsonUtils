@@ -1,0 +1,178 @@
+<project name="GsonSimple" default="zip-release" basedir=".">
+
+    <!-- set global properties for this build -->
+    <property file="gson-build.properties" />
+    <property name="manifest.path" value="${build.dir}/MANIFEST.mf" />
+    <property name="javadoc.dir" value="${build.dir}/javadoc" />
+    <property name="classes.dir" value="${build.dir}/classes" />
+    <property name="dest.src.dir" value="${classes.dir}/src" />
+    <property name="jar.dir" value="${build.dir}/jar" />
+
+    <property name="jar.bin.name" value="${app.name}-${app.version}-bin.jar" />
+    <property name="jar.javadoc.name" value="${app.name}-${app.version}-javadoc.jar" />
+    <property name="jar.src.name" value="${app.name}-${app.version}-src.jar" />
+    <property name="zip.release.name" value="${app.name}-${app.version}.zip" />
+
+    <description description="${app.description}" />
+
+    <!-- ______________________________________________________ -->
+
+    <!--the classpath for external libs-->
+    <path id="library.classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar" />
+    </path>
+    <!--match classes-->
+    <patternset id="class.patterns">
+        <include name="**/*.class" />
+    </patternset>
+    <!--match src-->
+    <patternset id="src.patterns">
+        <include name="**/*.java" />
+    </patternset>
+
+    <!-- ______________________________________________________ -->
+
+    <!--
+        initialisation
+    -->
+    <target name="prepare">
+        <!-- Create the time stamp -->
+        <!--<tstamp>-->
+            <!--<format property="DSTAMP" pattern="dd-MM-yyyy" locale="fr,CH" />-->
+        <!--</tstamp>-->
+        <mkdir dir="${classes.dir}" />
+    </target>
+
+    <!-- ______________________________________________________ -->
+
+    <!--
+        write a custom manifest which can then be included with <jar ... manifest="${build.dir}/${manifest.name}"
+    -->
+    <target name="write-manifest" unless="manifest.done">
+        <manifest file="${manifest.path}">
+            <attribute name="Built-By" value="${author}"/>
+            <attribute name="Description" value="${app.description}"/>
+            <attribute name="RequiredExecutionEnvironment" value="${app.jdk.compliance}"/>
+            <attribute name="Implementation-Version" value="${app.version} ${TODAY}"/>
+        </manifest>
+        <!--if the manifest was created, no need to do it twice-->
+        <available file="${manifest.path}" property="manifest.done" />
+        <echo message="Written manifest to ${manifest.path}" />
+        <!--<antcall target="add-main-class-to-manifest" />-->
+    </target>
+
+    <target name="add-main-class-to-manifest" depends="write-manifest" if="main-class">
+        <manifest file="${manifest.path}" mode="update">
+            <attribute name="Main-Class" value="${main-class}" />
+        </manifest>
+        <echo message="Updated manifest ${manifest.path} with main-class property: ${main-class}" />
+    </target>
+
+    <!-- ______________________________________________________ -->
+
+
+    <!--
+        compile everything
+    -->
+    <target name="compile" depends="prepare" description="compile the source">
+        <!-- Compile the java code from ${src} into ${build} -->
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="library.classpath" />
+
+        <!--include libraries-->
+        <unjar dest="${classes.dir}">
+            <patternset refid="class.patterns" />
+            <fileset dir="${lib.dir}" includes="*.jar" />
+        </unjar>
+        <!--copy resources, if any-->
+        <antcall target="copy-resources" />
+    </target>
+
+
+    <!--
+        compile javadoc
+    -->
+    <target name="javadoc" depends="prepare" description="generate the javadoc">
+        <mkdir dir="${javadoc.dir}"/>
+
+        <javadoc
+            sourcepath="${src.dir}"
+            destdir="${build.dir}/javadoc"
+            classpath="${src.dir}"
+            author="true"
+            version="true"
+            use="true"
+            windowtitle="${app.name} API"
+            doctitle="&lt;h1&gt;${app.name}&lt;/h1&gt;"
+            />
+
+    </target>
+
+    <!--
+        copy sources to out dir
+    -->
+    <target name="copy-sources" depends="prepare">
+        <!--copy the sources into the class dir-->
+        <copy todir="${dest.src.dir}">
+            <fileset dir="${src.dir}" includes="**/**" />
+        </copy>
+    </target>
+
+    <!--
+        copy resource folder to out dir, if any
+    -->
+    <target name="copy-resources" depends="prepare" if="resource.dir" >
+        <!--copies the static resources to the class dir-->
+        <copy todir="${classes.dir}/${resource.dir}">
+            <fileset dir="${src.dir}/${resource.dir}">
+                <include name="*" />
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- ______________________________________________________ -->
+
+
+    <target name="jar-bin" depends="compile,write-manifest" description="generate a jar with the compiled sources">
+        <antcall target="add-main-class-to-manifest" />
+        <jar jarfile="${jar.dir}/${jar.bin.name}" manifest="${manifest.path}" update="false">
+            <fileset dir="${classes.dir}" includes="**" />
+        </jar>
+        <echo message="Created jar file ${jar.dir}/${jar.bin.name}" />
+    </target>
+
+    <target name="jar-javadoc" depends="compile,javadoc, write-manifest" description="generate a jar with the javadoc">
+        <antcall target="add-main-class-to-manifest" />
+        <jar jarfile="${jar.dir}/${jar.javadoc.name}" manifest="${manifest.path}" update="false">
+            <fileset dir="${javadoc.dir}" includes="**" />
+        </jar>
+        <echo message="Created jar file ${jar.dir}/${jar.javadoc.name}" />
+    </target>
+
+    <target name="jar-src" depends="prepare,write-manifest" description="generate a jar with the sources">
+        <jar jarfile="${jar.dir}/${jar.src.name}"  manifest="${manifest.path}" update="false">
+            <fileset dir="${src.dir}" includes="**" />
+        </jar>
+        <echo message="Created jar file ${jar.dir}/${jar.src.name}" />
+    </target>
+
+    <target name="zip-release" depends="jar-javadoc, jar-bin, jar-src" description="generate a zip containing src.jar, bin.jar and javadoc.jar">
+        <zip zipfile="${zip.release.name}" update="false">
+            <fileset dir="${jar.dir}" includes="**" />
+        </zip>
+        <echo message="Created zip file ${zip.release.name}" />
+    </target>
+
+    <target name="jar-bin-src" depends="prepare, copy-sources, jar-bin" description="generate a jar file containing the compiled classes + a src directory"/>
+
+    <!--
+        clean up: delete build directory
+    -->
+    <target name="clean" description="delete build output">
+        <delete dir="${build.dir}"/>
+    </target>
+
+   <target name="run" depends="jar-bin" if="main-class" description="create a jar (bin) and execute it">
+       <java jar="${jar.dir}/${jar.bin.name}" fork="true"/>
+   </target>
+
+</project>
