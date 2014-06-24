@@ -1,16 +1,23 @@
-<project name="GsonSimple" default="all" basedir=".">
+<project name="GsonSimple" default="jar-all" basedir=".">
     <description>
         simple gson utility classes to serialise/deserialise json files
     </description>
 
     <!-- set global properties for this build -->
     <property file="build.properties" />
+    <property name="manifest.name" value="MANIFEST.mf" />
 
-    <path id="classpath">
+    <!--the classpath for external libs-->
+    <path id="library.classpath">
         <fileset dir="${lib.dir}" includes="**/*.jar" />
     </path>
+    <!--match classes-->
     <patternset id="class.patterns">
-        <include name="**/*.class"/>
+        <include name="**/*.class" />
+    </patternset>
+    <!--match src-->
+    <patternset id="src.patterns">
+        <include name="**/*.java" />
     </patternset>
 
     <!--
@@ -19,107 +26,106 @@
     <target name="init">
         <!-- Create the time stamp -->
         <tstamp>
-            <format property="DSTAMP" pattern="dd-MM-yyyy" locale="fr,CH"/>
+            <format property="DSTAMP" pattern="dd-MM-yyyy" locale="fr,CH" />
         </tstamp>
-        <!-- Create the build directory structure used by compile -->
+    </target>
+
+
+
+    <!--
+        write a custom manifest which can then be included with <jar ... manifest="${build.dir}/${manifest.name}"
+    -->
+    <target name="write-manifest" depends="">
+        <manifest file="${build.dir}/${manifest.name}">
+            <attribute name="Built-By" value="${author}"/>
+            <attribute name="Description" value="${app.description}"/>
+            <attribute name="RequiredExecutionEnvironment" value="${min-jdk}"/>
+            <attribute name="Implementation-Version" value="${app.version} ${TODAY}"/>
+            <attribute name="Main-Class" value="${main-class}" />
+        </manifest>
     </target>
 
     <!--
-        compile everything except examples directory
+        compile everything
     -->
-    <target name="compile" depends="init"
-        description="compile the source " >
-        <mkdir dir="${classes.dir}"/>
+    <target name="compile" depends="init" description="compile the source">
+        <mkdir dir="${classes.dir}" />
         <!-- Compile the java code from ${src} into ${build} -->
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"  />
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="library.classpath" />
+        <!--copies the static resources to the class dir-->
         <copy todir="${classes.dir}/resources/">
             <fileset dir="${src.dir}/resources">
-                <include name="**/*"/>
+                <include name="*" />
             </fileset>
         </copy>
-        <!--copies the static resources (.json) to the class dir-->
+
+        <unjar dest="${classes.dir}">
+            <patternset refid="class.patterns" />
+            <fileset dir="${lib.dir}" includes="*.jar" />
+        </unjar>
     </target>
 
     <!--
         compile everything except examples directory and then copy sources to out dir
     -->
     <target name="compile-with-sources" depends="init, compile">
-        <!--<mkdir dir="${build.dir}/src" />-->
+        <!--copy the sources into the class dir-->
         <copy todir="${dest.src.dir}">
-            <fileset dir="${src.dir}" includes="**/*.java"/>
-        </copy>
-        <!--copies the sources into the class dir-->
-        <unjar dest="${dest.lib.dir}">
-            <patternset refid="class.patterns"/>
-            <fileset dir="${lib.dir}" includes="*.jar"/>
-        </unjar>
-        <copy todir="${dest.src.dir}/resources/">
-            <fileset dir="${src.dir}/resources">
-                <include name="**/*"/>
-            </fileset>
+            <fileset dir="${src.dir}" includes="**/**" />
         </copy>
     </target>
 
     <!--
         create a jar with classes + sources
     -->
-    <!--<target name="all" depends="compile-with-sources"-->
-        <!--description="generate the distribution with test files and all" >-->
-        <!--&lt;!&ndash; Put everything in ${build} into the MyProject-${DSTAMP}.jar file &ndash;&gt;-->
-        <!--<jar jarfile="${jar.name.all}-${DSTAMP}.jar" basedir="${build.dir}">-->
-            <!--<zipgroupfileset includes="*.jar" dir="${lib.dir}"/>-->
-            <!--<manifest>-->
-                <!--<attribute name="Main-Class" value="examples.ExampleConfigContainer"/>-->
-            <!--</manifest>-->
-        <!--</jar>-->
-        <!--<delete dir="${build.dir}"/>-->
-    <!--</target>-->
-    <target name="all" depends="compile-with-sources"
-        description="generate the distribution with test files and all" >
+    <target name="jar-all" depends="compile-with-sources,write-manifest" description="generate the distribution with test files and all">
         <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-        <jar jarfile="${jar.name.all}-${DSTAMP}.jar" basedir="${build.dir}">
-            <!--include everything in the class dir-->
-            <fileset dir="${build.dir}" includes="**"/>
-            <manifest>
-                <attribute name="Class-Path" value="./classes/" />
-                <attribute name="Main-Class" value="${main-class}"/>
-            </manifest>
+        <jar jarfile="${jar.name.all}-${DSTAMP}.jar" manifest="${build.dir}/${manifest.name}"  update="false">
+            <fileset dir="${classes.dir}" includes="**" />
         </jar>
-        <delete dir="${build.dir}"/>
+        <delete dir="${build.dir}" />
     </target>
 
     <!--
         create a jar with classes only
     -->
-    <target name="release" depends="compile"
-        description="generate the distribution with test files and all" >
-        <!-- Create the distribution directory -->
-        <!--<mkdir dir="${dist.dir}"/>-->
-
+    <target name="jar-release" depends="compile,write-manifest" description="generate the distribution with test files and all">
         <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
-        <!--<jar jarfile="${dist.dir}/${app.name}-${app.version}.rt.${DSTAMP}.jar" basedir="${build.dir}" />-->
-        <jar jarfile="${jar.name.release}-${DSTAMP}.jar" basedir="${build.dir}" >
-            <zipgroupfileset includes="*.jar" dir="${lib.dir}" />
+        <jar jarfile="${jar.name.release}-${DSTAMP}.jar" update="false" manifest="${build.dir}/${manifest.name}">
+            <fileset dir="${classes.dir}" includes="**" />
+            <!--<manifest>-->
+                <!--<attribute name="Main-Class" value="${main-class}" />-->
+            <!--</manifest>-->
         </jar>
-        <echo >${jar.name.release}</echo>
-        <delete dir="${build.dir}"/>
     </target>
 
 
     <!--
-        clean up: delete build directories
+        clean up: delete build directory
     -->
-    <target name="clean"
-        description="clean up" >
-        <!-- Delete the ${build} and ${dist} directory trees -->
+    <target name="clean">
         <delete dir="${build.dir}"/>
-        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!--
+        clean up: delete build directory + jars
+    -->
+    <target name="clean-all" description="clean all: build dir and jars" depends="clean">
+        <!-- Delete the ${build} and ${dist} directory trees -->
+        <delete dir="${build.dir}" />
         <delete>
             <fileset dir="." includes="${app.name}*.jar" />
         </delete>
     </target>
 
-    <target name="run" depends="release">
-        <java jar="${jar.name}" fork="true"/>
+
+    <target name="clean-build" depends="clean,jar-release"/>
+
+    <target name="run-release" depends="jar-release">
+        <java jar="${jar.name.release}-${DSTAMP}.jar" fork="true" />
+    </target>
+
+    <target name="run-all" depends="jar-all">
+        <java jar="${jar.name.all}-${DSTAMP}.jar" fork="true" />
     </target>
 </project>
