@@ -1,0 +1,21 @@
+{
+   "course" : "1314_HES-SO-FR_I2-Microprocesseurs ",
+   "inodes_to_names_mapping" : {
+      "39847606" : "AN5296.pdf",
+      "39847604" : "p.10_exercices_cache.pdf",
+      "39847598" : "p.07_exercices_verification.pdf",
+      "39847603" : "p.07_slides_c_verification.pdf",
+      "39847596" : "p.06_exercices_toolchain.pdf",
+      "39847605" : "p.11_slides_mmu.pdf",
+      "39847597" : "t.04.0_objectifs_travail_ecrit_4.pdf",
+      "39847600" : "p.09_slides_dma.pdf",
+      "39847602" : "p.06_slides_c_toolchain.pdf",
+      "39847601" : "p.10_slides_cache.pdf",
+      "39847599" : "p.09_exercices_dma.pdf",
+      "39847595" : "t.05.0_objectifs_examen_oral.pdf"
+   },
+   "course_url" : "http://cyberlearn.hes-so.ch/course/view.php?id=5213",
+   "dir" : [
+      "a_semester"
+   ]
+}

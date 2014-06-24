@@ -1,0 +1,10 @@
+bin/*
+pass/bin/*
+pass/.classpath
+.metadata/*
+pass/.settings/*
+pass/src/META*
+out/*
+.idea/*
+*.iml
+pass/*.iml
