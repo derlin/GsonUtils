@@ -4,6 +4,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 
 /**
+ * Exclude fields with the {@link DoNotSerialize} annotation.
  * @author: Lucy Linder
  * @date: 23.06.2014
  */

@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Annotation used to exclude fields from json serialisation
  * @author: Lucy Linder
  * @date: 23.06.2014
  */

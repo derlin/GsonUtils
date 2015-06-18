@@ -13,10 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * Simple example.
+ *
  * @author: Lucy Linder
  * @date: 19.06.2014
  */
 public class ExampleConfigContainer{
+
     public String course;
 
     @SerializedName( "course_url" )

@@ -3,7 +3,15 @@ package gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.*;
+import java.lang.reflect.Type;
 
+
+/**
+ * Utilities to serialize/deserialize objects using Gson library.
+ *
+ * @author: Lucy Linder
+ * @date: 23.05.2013
+ */
 public class GsonUtils{
 
     /** see {@link GsonUtils#getJsonFromFile(java.io.File, Object)} */
@@ -112,5 +120,29 @@ public class GsonUtils{
                 .create()  //
                 .toJson( o, o.getClass() );
     }//end toJsonString
+
+
+    /**
+     * Deserialise a json string to an object.
+     * Example:
+     *
+     * <pre>
+     * {@code
+     *
+     * Map<String,String> map = new HashMap<>();
+     * map.put(...);
+     * String json = GsonUtils.toJson(map);
+     * Map<String, String> deserialisedMap = (Map<String,String>)
+     *      GsonUtils.fromJson(json, new TypeToken<Map<String,String>>(){}.getType());
+     * }
+     * </pre>
+     *
+     * @param json the json string
+     * @param type the object's type
+     * @return the object
+     */
+    public static Object fromJson( String json, Type type ){
+        return new GsonBuilder().create().fromJson( json, type );
+    }
 
 }// end class

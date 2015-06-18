@@ -1,4 +1,4 @@
-<project name="GsonSimple" default="jar-all" basedir=".">
+<project name="GsonSimple-old" default="jar-all" basedir=".">
     <description>
         simple gson utility classes to serialise/deserialise json files
     </description>
@@ -20,6 +20,8 @@
         <include name="**/*.java" />
     </patternset>
 
+    <!-- ______________________________________________________ -->
+
     <!--
         initialisation
     -->
@@ -28,9 +30,24 @@
         <tstamp>
             <format property="DSTAMP" pattern="dd-MM-yyyy" locale="fr,CH" />
         </tstamp>
+        <mkdir dir="${classes.dir}" />
     </target>
 
+    <target name="javadoc" depends="init">
+        <mkdir dir="${build.dir}/javadoc"/>
 
+        <javadoc
+            sourcepath="${src.dir}"
+            destdir="${build.dir}/javadoc"
+            classpath="${src.dir}"
+            author="true"
+            version="true"
+            use="true"
+            windowtitle="${app.name} API"
+            doctitle="&lt;h1&gt;${app.name}&lt;/h1&gt;"
+            />
+
+    </target>
 
     <!--
         write a custom manifest which can then be included with <jar ... manifest="${build.dir}/${manifest.name}"
@@ -41,15 +58,16 @@
             <attribute name="Description" value="${app.description}"/>
             <attribute name="RequiredExecutionEnvironment" value="${min-jdk}"/>
             <attribute name="Implementation-Version" value="${app.version} ${TODAY}"/>
-            <attribute name="Main-Class" value="${main-class}" />
+
         </manifest>
     </target>
+
+    <!-- ______________________________________________________ -->
 
     <!--
         compile everything
     -->
     <target name="compile" depends="init" description="compile the source">
-        <mkdir dir="${classes.dir}" />
         <!-- Compile the java code from ${src} into ${build} -->
         <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="library.classpath" />
         <!--copies the static resources to the class dir-->
@@ -66,20 +84,25 @@
     </target>
 
     <!--
-        compile everything except examples directory and then copy sources to out dir
+        compile everything and then copy sources to out dir
     -->
-    <target name="compile-with-sources" depends="init, compile">
+    <target name="compile-with-sources" depends="compile">
         <!--copy the sources into the class dir-->
         <copy todir="${dest.src.dir}">
             <fileset dir="${src.dir}" includes="**/**" />
         </copy>
     </target>
 
+    <!-- ______________________________________________________ -->
+
     <!--
         create a jar with classes + sources
     -->
     <target name="jar-all" depends="compile-with-sources,write-manifest" description="generate the distribution with test files and all">
         <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+        <manifest file="${build.dir}/${manifest.name}" mode="update">
+            <attribute name="Main-Class" value="${main-class}" />
+        </manifest>
         <jar jarfile="${jar.name.all}-${DSTAMP}.jar" manifest="${build.dir}/${manifest.name}"  update="false">
             <fileset dir="${classes.dir}" includes="**" />
         </jar>
@@ -91,11 +114,9 @@
     -->
     <target name="jar-release" depends="compile,write-manifest" description="generate the distribution with test files and all">
         <!-- Put everything in ${build} into the MyProject-${DSTAMP}.jar file -->
+
         <jar jarfile="${jar.name.release}-${DSTAMP}.jar" update="false" manifest="${build.dir}/${manifest.name}">
             <fileset dir="${classes.dir}" includes="**" />
-            <!--<manifest>-->
-                <!--<attribute name="Main-Class" value="${main-class}" />-->
-            <!--</manifest>-->
         </jar>
     </target>
 
@@ -127,5 +148,20 @@
 
     <target name="run-all" depends="jar-all">
         <java jar="${jar.name.all}-${DSTAMP}.jar" fork="true" />
+    </target>
+
+
+    <!--little test to do something conditionally-->
+    <target name="test-echo" if="include.src">
+        <echo message="lala" />
+        <echo message="${include.src}" />
+    </target>
+
+    <target name="test" depends="test-echo">
+        <!--<property name="include.src" value="true" />-->
+        <antcall target="test-echo">
+            <!--<param name="include.src" value="false" />-->
+        </antcall>
+        <echo message="${description}" />
     </target>
 </project>
