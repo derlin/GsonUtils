@@ -76,7 +76,7 @@ public class ExampleConfigContainer{
 
         // serialize object
         File file = new File( "test.json" );
-        GsonUtils.writeJsonFile( file, exampleContainer );
+        GsonUtils.writeJsonFile( file, exampleContainer, true );
 
     }
 }//end class

@@ -1,6 +1,7 @@
 package gson;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -14,13 +15,13 @@ import java.lang.reflect.Type;
  */
 public class GsonUtils{
 
-    /** see {@link GsonUtils#getJsonFromFile(java.io.File, Object)} */
+    /** see {@link GsonUtils#getJsonFromFile(java.io.InputStream, Object)} */
     public static Object getJsonFromFile( String path, Object container ){
         return getJsonFromFile( new File( path ), container );
     }// end getJsonFromFile
 
 
-    /** see {@link GsonUtils#getJsonFromFile(java.io.File, Object)} */
+    /** see {@link GsonUtils#getJsonFromFile(java.io.InputStream, Object)} */
     public static Object getJsonFromFile( File file, Object container ){
 
         FileInputStream fin = null;
@@ -54,24 +55,90 @@ public class GsonUtils{
         }catch( Exception e ){
             System.out.println( e.getMessage() );
             e.printStackTrace();
+
+        }finally{
+            try{
+                stream.close();
+            }catch( IOException e ){
+                //
+            }
         }
         return null;
 
     }// end getJsonFromFile
 
+    // ----------------------------------------------------
+
+
+    /** see {@link GsonUtils#getJsonFromFile(java.io.InputStream, com.google.gson.reflect.TypeToken)} */
+    public static Object getJsonFromFile( String path, TypeToken typeToken ){
+        return getJsonFromFile( new File( path ), typeToken );
+    }// end getJsonFromFile
+
+
+    /** see {@link GsonUtils#getJsonFromFile(java.io.InputStream, com.google.gson.reflect.TypeToken)} */
+    public static Object getJsonFromFile( File file, TypeToken typeToken ){
+
+        FileInputStream fin = null;
+        try{
+            fin = new FileInputStream( file );
+            return getJsonFromFile( fin, typeToken );
+        }catch( Exception e ){
+            e.printStackTrace();
+            System.out.println( "exception while getting json from file " + file.getPath() + " " +
+                    "catched." );
+        }
+        return null;
+    }// end getJsonFromFile
+
+
+    /**
+     * read a json stream and store its content into a generic object.
+     *
+     * @param stream    the json stream to read from
+     * @param typeToken the typetoken of the object to return
+     * @return the object, or null if an error occurred
+     */
+    public static Object getJsonFromFile( InputStream stream, TypeToken typeToken ){
+
+        try{
+            return new GsonBuilder().create() //
+                    .fromJson( new InputStreamReader( stream ), typeToken.getType() );
+
+        }catch( Exception e ){
+            System.out.println( e.getMessage() );
+            e.printStackTrace();
+
+        }finally{
+            try{
+                stream.close();
+            }catch( IOException e ){
+                //
+            }
+        }
+        return null;
+
+    }// end getJsonFromFile
+
+    // ----------------------------------------------------
+
 
     /**
      * Serialize the given object into json
      *
-     * @param file      the destination file
-     * @param container the object
+     * @param file           the destination file
+     * @param container      the object
+     * @param prettyPrinting true if the json should be written with spaces and formatting, false
+     *                       for a compressed output
      * @return true if the operation could be performed, false otherwise
      */
-    public static boolean writeJsonFile( File file, Object container ){
+    public static boolean writeJsonFile( File file, Object container, boolean prettyPrinting ){
         try{
             FileOutputStream fos;
-            String str = new GsonBuilder().setPrettyPrinting()  //
-                    .setExclusionStrategies( new GsonSimpleExclusionStrategy() ) //
+            GsonBuilder builder = new GsonBuilder();
+            if( prettyPrinting ) builder.setPrettyPrinting();
+
+            String str = builder.setExclusionStrategies( new GsonSimpleExclusionStrategy() ) //
                     .create()  //
                     .toJson( container, container.getClass() );
 
@@ -88,14 +155,16 @@ public class GsonUtils{
     }//end writeJsonFile
 
 
-    /** see {@link GsonUtils#writeJsonFile(String, Object)} */
-    public static boolean writeJsonFile( String filepath, Object container ){
-        return writeJsonFile( new File( filepath ), container );
+    /** see {@link GsonUtils#writeJsonFile(String, Object, boolean)} */
+    public static boolean writeJsonFile( String filepath, Object container, boolean prettyPrinting ){
+        return writeJsonFile( new File( filepath ), container, prettyPrinting );
     }//end writeJsonFile
+
+    // ----------------------------------------------------
 
 
     /**
-     * Serialize the given object into a json string.
+     * Serialize the given object into a json string, excluding no field.
      *
      * @param o the object
      * @return the json string
@@ -121,11 +190,13 @@ public class GsonUtils{
                 .toJson( o, o.getClass() );
     }//end toJsonString
 
+    // ----------------------------------------------------
+
 
     /**
      * Deserialise a json string to an object.
      * Example:
-     *
+     * <p/>
      * <pre>
      * {@code
      *
