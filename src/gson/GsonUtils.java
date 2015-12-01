@@ -164,6 +164,48 @@ public class GsonUtils{
 
 
     /**
+     * Serialize the given object into json
+     *
+     * @param file           the destination file
+     * @param container      the object
+     * @param typeToken      the typeToken of the object
+     * @param prettyPrinting true if the json should be written with spaces and formatting, false
+     *                       for a compressed output
+     * @return true if the operation could be performed, false otherwise
+     */
+    public static boolean writeJsonFile( File file, Object container, TypeToken typeToken, boolean prettyPrinting ){
+        try{
+            FileOutputStream fos;
+            GsonBuilder builder = new GsonBuilder();
+            if( prettyPrinting ) builder.setPrettyPrinting();
+
+            String str = builder.setExclusionStrategies( new GsonSimpleExclusionStrategy() ) //
+                    .create()  //
+                    .toJson( container, typeToken.getType() );
+
+            fos = new FileOutputStream( file );
+            fos.write( str.getBytes() );
+            fos.close();
+            return true;
+        }catch( Exception e ){
+            System.out.println( e.getMessage() );
+            e.printStackTrace();
+        }
+
+        return false;
+    }//end writeJsonFile
+
+
+    /** see {@link GsonUtils#writeJsonFile(String, Object, com.google.gson.reflect.TypeToken, boolean)} */
+    public static boolean writeJsonFile( String filepath, Object container, TypeToken typeToken, boolean
+            prettyPrinting ){
+        return writeJsonFile( new File( filepath ), container, typeToken, prettyPrinting );
+    }//end writeJsonFile
+
+    // ----------------------------------------------------
+
+
+    /**
      * Serialize the given object into a json string, excluding no field.
      *
      * @param o the object
